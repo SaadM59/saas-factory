@@ -1,7 +1,8 @@
 import { createClient } from "@/utils/supabase/server"
 import { prisma } from "@/lib/prisma"
-import { Button } from "@/components/ui/button" // Assure-toi d'avoir cet import
-import { createCheckoutSession } from "@/app/actions/stripe" // Et celui-ci
+import { Button } from "@/components/ui/button"
+import { createCheckoutSession } from "@/app/actions/stripe"
+import { sendWelcomeEmail } from "@/lib/email" // Import ajouté pour le test
 
 export default async function DashboardPage() {
   // 1. Qui est connecté ?
@@ -28,12 +29,15 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8"> {/* J'ai augmenté un peu l'espacement vertical */}
+      
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
       </div>
       
+      {/* --- ZONE PRINCIPALE (Tes cartes actuelles) --- */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        
         {/* Carte Statut Abonnement */}
         <div className="rounded-xl border bg-white p-6 shadow-sm flex flex-col justify-between">
           <div>
@@ -48,7 +52,7 @@ export default async function DashboardPage() {
             </div>
           </div>
           
-          {/* Le Bouton Magique */}
+          {/* Le Bouton Magique Stripe */}
           {userProfile.tier === "free" && (
             <form action={async () => {
               "use server"
@@ -75,6 +79,31 @@ export default async function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* --- ZONE DE DIAGNOSTIC (Temporaire pour test) --- */}
+      <div className="mt-8 p-6 border border-dashed border-yellow-500 rounded-xl bg-yellow-50">
+        <h3 className="font-bold text-yellow-800 mb-2">Diagnostic Système Email</h3>
+        <p className="text-sm text-yellow-700 mb-4">
+          Ceci est un bouton de test manuel pour vérifier la connexion Resend.
+          Regarde les logs Vercel après avoir cliqué.
+        </p>
+        
+        <form action={async () => {
+          "use server"
+          console.log("🚀 Lancement du test email manuel...")
+          
+          // ATTENTION : On force l'envoi à ton adresse admin pour le test
+          const targetEmail = "saad.mejdoubi14@gmail.com" 
+          
+          await sendWelcomeEmail(targetEmail)
+          console.log("🏁 Fin de la tentative d'envoi.")
+        }}>
+          <Button variant="outline" className="border-yellow-600 text-yellow-800 hover:bg-yellow-100">
+            📨 Envoyer un Email Test à Saad
+          </Button>
+        </form>
+      </div>
+
     </div>
   )
 }
