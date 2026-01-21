@@ -2,12 +2,12 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  // 1. EXCLUSION EXPLICITE : Si c'est une API, on laisse passer tout de suite.
+  // 1. LAISSEZ-PASSER : On ignore tout ce qui est API (Stripe, etc.)
   if (request.nextUrl.pathname.startsWith('/api')) {
     return NextResponse.next()
   }
 
-  // 2. Logique Supabase pour le reste du site
+  // 2. SÉCURITÉ SUPABASE (Pour le reste)
   let response = NextResponse.next({
     request: { headers: request.headers },
   })
@@ -33,7 +33,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // On garde le matcher large pour couvrir toute l'app
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 }
