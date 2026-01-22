@@ -29,6 +29,7 @@ model Project {
   // Champs pour l'Agent 2
   prd       String?  @db.Text 
   schema    String?  @db.Text 
+  landingPageCode String? @db.Text // Le code React complet de la page d'accueil
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
