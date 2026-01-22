@@ -3,6 +3,8 @@
 import { createOpenAI } from '@ai-sdk/openai'
 import { generateObject } from 'ai'
 import { z } from 'zod'
+import { prisma } from "@/lib/prisma"
+import { createClient } from "@/utils/supabase/server"
 
 // Configuration du modèle
 const openai = createOpenAI({
@@ -21,11 +23,16 @@ const StrategySchema = z.object({
 })
 
 export async function generateStrategy(userIdea: string) {
-  'use server'
+  // 1. Vérification Utilisateur
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) return { success: false, error: "Non connecté" }
 
   console.log("🧠 Agent Strategist activé pour :", userIdea.substring(0, 50) + "...")
 
   try {
+    // 2. Appel IA
     const { object } = await generateObject({
       model: openai('gpt-4o'), // Le modèle le plus intelligent actuel
       schema: StrategySchema,
@@ -42,7 +49,18 @@ export async function generateStrategy(userIdea: string) {
       prompt: `Voici l'idée brute : "${userIdea}"`,
     })
 
-    return { success: true, data: object }
+    // 3. Sauvegarde en DB
+    const savedProject = await prisma.project.create({
+      data: {
+        userId: user.id,
+        name: object.project_name,
+        strategy: object as any, // Cast pour Prisma JSON
+      }
+    })
+
+    // Retourne le résultat ET l'ID du projet créé
+    return { success: true, data: object, projectId: savedProject.id }
+
   } catch (error) {
     console.error("❌ Erreur IA:", error)
     return { success: false, error: "L'IA n'a pas pu analyser l'idée." }

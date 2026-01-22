@@ -19,3 +19,17 @@ model UserProfile {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+
+model Project {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  strategy  Json     // Stocke le résultat de l'Agent 1
+  
+  // Champs pour l'Agent 2
+  prd       String?  @db.Text 
+  schema    String?  @db.Text 
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
