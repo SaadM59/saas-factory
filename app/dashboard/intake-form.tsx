@@ -32,7 +32,8 @@ export function IntakeForm({ credits }: { credits: number }) {
 
     if (response.success) {
       setResult(response.data)
-      setCurrentProjectId(response.projectId) // On garde l'ID pour l'étape suivante
+      // --- CORRECTION ICI : On ajoute "?? null" pour rassurer TypeScript ---
+      setCurrentProjectId(response.projectId ?? null) 
     } else {
       alert("Erreur: " + response.error)
     }
