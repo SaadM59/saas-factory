@@ -1,0 +1,59 @@
+// --- 1. CONFIGURATION OBLIGATOIRE (Le Moteur) ---
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// --- 2. MODÈLES GÉNÉRÉS PAR L'IA (Le Contenu) ---
+
+// Modèle profil chat
+model CatProfile {
+  id          String   @id @default(uuid())
+  ownerId     String   // Lien avec l'user Supabase
+  name        String
+  age         Int
+  bio         String?
+  breed       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations (Si l'IA a suggéré un modèle User, on l'ignore ici car on utilise Supabase Auth directement, 
+  // mais on garde ownerId pour faire le lien)
+}
+
+// Modèle Événement
+model Event {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  location    String
+  date        DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Modèle Messagerie
+model Messaging {
+  id          String   @id @default(uuid())
+  senderId    String
+  receiverId  String
+  message     String
+  sentAt      DateTime @default(now())
+  read        Boolean  @default(false)
+}
+
+// Modèle Abonnement
+model Subscription {
+  id          String   @id @default(uuid())
+  userId      String
+  type        String   // "free", "premium"
+  startDate   DateTime @default(now())
+  endDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
