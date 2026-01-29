@@ -22,17 +22,32 @@ const StrategySchema = z.object({
   mvp_features: z.array(z.string()).max(3).describe("Liste stricte des 3 fonctionnalités MVP"),
 })
 
-export async function generateStrategy(userIdea: string) {
-  // 1. Vérification Utilisateur
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+/**
+ * Génère une stratégie SaaS à partir d'une idée.
+ * @param userIdea - Le texte de l'idée brute.
+ * @param systemUserId - (Optionnel) Un ID fourni par l'API/CLI pour contourner l'auth cookie.
+ */
+export async function generateStrategy(userIdea: string, systemUserId?: string) {
+  let userId = systemUserId;
+
+  // 1. Si pas d'ID système (appel via le site web), on vérifie le cookie utilisateur
+  if (!userId) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      userId = user.id
+    }
+  }
   
-  if (!user) return { success: false, error: "Non connecté" }
+  // Si toujours pas d'user identifié, on bloque
+  if (!userId) {
+    return { success: false, error: "Accès refusé : Utilisateur non identifié." }
+  }
 
   console.log("🧠 Agent Strategist activé pour :", userIdea.substring(0, 50) + "...")
 
   try {
-    // 2. Appel IA
+    // 2. Appel IA (Intelligence)
     const { object } = await generateObject({
       model: openai('gpt-4o'), // Le modèle le plus intelligent actuel
       schema: StrategySchema,
@@ -49,10 +64,10 @@ export async function generateStrategy(userIdea: string) {
       prompt: `Voici l'idée brute : "${userIdea}"`,
     })
 
-    // 3. Sauvegarde en DB
+    // 3. Sauvegarde en DB (Mémoire)
     const savedProject = await prisma.project.create({
       data: {
-        userId: user.id,
+        userId: userId, // On utilise l'ID déterminé plus haut (Système ou Humain)
         name: object.project_name,
         strategy: object as any, // Cast pour Prisma JSON
       }
@@ -61,8 +76,8 @@ export async function generateStrategy(userIdea: string) {
     // Retourne le résultat ET l'ID du projet créé
     return { success: true, data: object, projectId: savedProject.id }
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("❌ Erreur IA:", error)
-    return { success: false, error: "L'IA n'a pas pu analyser l'idée." }
+    return { success: false, error: "L'IA n'a pas pu analyser l'idée : " + error.message }
   }
 }
