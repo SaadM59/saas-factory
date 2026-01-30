@@ -37,6 +37,9 @@ export async function generateLandingPage(projectId: string) {
         3. **IMPORTS** : N'oublie pas d'importer Link de 'next/link'.
         4. **ESTHÉTIQUE** : Utilise des espacements généreux (py-24), des ombres douces (shadow-xl) et des bordures fines (border-zinc-200).
         5. **HÉROS** : Un titre H1 énorme (text-6xl), centré, avec un sous-titre lisible.
+        6. IMPORTS STRICTS : Utilise toujours l'alias '@' pour les imports internes.
+        - CORRECT : import { Button } from "@/components/ui/button"
+        - INTERDIT : import { Button } from "components/ui/button"
         
         CONTENU:
         - Pitch: ${strategy.brutal_feedback}
