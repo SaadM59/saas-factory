@@ -7,59 +7,42 @@ import { prisma } from "@/lib/prisma"
 
 const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
-const ArchitectureSchema = z.object({
-  prisma_schema: z.string().describe("Le code Prisma Schema complet."),
-  user_stories: z.array(z.object({
-    title: z.string(),
-    description: z.string(),
-    acceptance_criteria: z.array(z.string())
-  })),
-  api_routes: z.array(z.string()),
-})
-
 export async function generateArchitecture(projectId: string) {
   const project = await prisma.project.findUnique({ where: { id: projectId } })
-  if (!project || !project.strategy) return { success: false, error: "Projet introuvable" }
-
-  console.log("🏗️ Agent Architect (V2 Stable) pour :", project.name)
+  if (!project) return { success: false, error: "Projet introuvable" }
 
   try {
     const { object } = await generateObject({
       model: openai('gpt-4o'),
-      schema: ArchitectureSchema,
+      schema: z.object({
+        prisma_models: z.string().describe("UNIQUEMENT les blocs 'model' Prisma. INTERDIT d'inclure datasource ou generator."),
+        user_stories: z.array(z.object({ title: z.string(), description: z.string() }))
+      }),
       system: `
-        ROLE: Tu es un Architecte Logiciel expert.
-        MISSION: Produire un schéma Prisma PARFAIT.
+        ROLE: Tu es un générateur de Schéma Prisma pur.
+        MISSION: Générer les modèles pour "${project.name}".
         
-        CONSIGNE CRITIQUE :
-        Chaque schéma doit OBLIGATOIREMENT inclure le modèle 'User' suivant pour permettre les relations :
-        
-        model User {
-          id        String   @id @default(uuid())
-          email     String   @unique
-          name      String?
-          createdAt DateTime @default(now())
-          updatedAt DateTime @updatedAt
-          // Ajoute ici les relations vers tes autres modèles (ex: invoices Invoice[])
-        }
-
-        RÈGLES :
-        - Utilise des relations @relation pour lier les données à l'utilisateur.
-        - Utilise @default(uuid()) pour les IDs.
-        - Ne mets PAS de bloc 'datasource' ou 'generator', commence direct aux 'model'.
+        RÈGLE ABSOLUE : 
+        1. Tu dois commencer par le modèle User EXACTEMENT comme ceci :
+           model User {
+             id        String   @id @default(uuid())
+             email     String   @unique
+             name      String?
+             createdAt DateTime @default(now())
+             updatedAt DateTime @updatedAt
+           }
+        2. Ajoute ensuite les autres modèles (Invoices, Drones, etc.) avec leurs relations vers User.
+        3. NE GÉNÈRE QUE LES MODÈLES. Pas de code TypeScript, pas de texte, pas de bloc config.
       `,
-      prompt: `Génère l'architecture pour : ${JSON.stringify(project.strategy)}`,
+      prompt: `Génère les modèles Prisma pour cette stratégie : ${JSON.stringify(project.strategy)}`,
     })
 
     await prisma.project.update({
       where: { id: projectId },
-      data: {
-        schema: object.prisma_schema,
-        prd: JSON.stringify(object.user_stories)
-      }
+      data: { schema: object.prisma_models }
     })
 
-    return { success: true, data: object }
+    return { success: true, data: { prisma_schema: object.prisma_models, user_stories: object.user_stories } }
   } catch (error: any) {
     return { success: false, error: error.message }
   }
