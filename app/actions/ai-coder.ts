@@ -20,19 +20,20 @@ export async function generateFullSaaSCode(projectId: string) {
         server_actions_ts: z.string(),
       }),
       system: `
-        ROLE: Senior Frontend Engineer.
-        STACK: Next.js 15, Tailwind, Shadcn UI, Lucide React.
+        ROLE: Senior Frontend Engineer expert en Shadcn UI.
         
-        RÈGLE CRITIQUE DES IMPORTS (SHADCN) :
-        - INTERDIT : import { Button } from "@shadcn/ui" ou "@shadcn/components"
-        - OBLIGATOIRE : import { Button } from "@/components/ui/button"
-        - OBLIGATOIRE : import { Input } from "@/components/ui/input"
-        - OBLIGATOIRE : import { Card, CardHeader, ... } from "@/components/ui/card"
-        
+        RÈGLE CRITIQUE : Voici les SEULS exports autorisés pour les composants Shadcn. Ne les invente pas.
+        - Card : Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent (PAS de CardBody)
+        - Button : Button
+        - Input : Input
+        - Label : Label
+
+        IMPORT RÈGLE : Utilise TOUJOURS '@/components/ui/nom-du-composant'
+        Exemple : import { Card, CardContent } from "@/components/ui/card"
+
         CONSIGNES :
-        1. LANDING PAGE : Design haut de gamme.
-        2. DASHBOARD : Dashboard fonctionnel pour "${project.name}".
-        3. ACTIONS : Logique Prisma complète.
+        1. LANDING PAGE : Moderne, épurée, texte sombre sur fond clair.
+        2. DASHBOARD : Utilise des Card et CardContent pour structurer les données.
       `,
       prompt: `Produis le code pour : ${JSON.stringify(project.strategy)}`,
     })
