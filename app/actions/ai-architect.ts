@@ -7,60 +7,60 @@ import { prisma } from "@/lib/prisma"
 
 const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
-// Structure de sortie de l'Architecte
 const ArchitectureSchema = z.object({
-  prisma_schema: z.string().describe("Le code Prisma Schema complet pour ce projet"),
+  prisma_schema: z.string().describe("Le code Prisma Schema complet."),
   user_stories: z.array(z.object({
     title: z.string(),
     description: z.string(),
     acceptance_criteria: z.array(z.string())
-  })).describe("Liste des user stories techniques"),
-  api_routes: z.array(z.string()).describe("Liste des routes API nécessaires (ex: /api/cron)"),
+  })),
+  api_routes: z.array(z.string()),
 })
 
 export async function generateArchitecture(projectId: string) {
-  'use server'
-  
-  // 1. Récupérer la stratégie existante
   const project = await prisma.project.findUnique({ where: { id: projectId } })
   if (!project || !project.strategy) return { success: false, error: "Projet introuvable" }
 
-  const strategy = project.strategy as any
-
-  console.log("🏗️ Agent Architect activé pour :", project.name)
+  console.log("🏗️ Agent Architect (V2 Stable) pour :", project.name)
 
   try {
     const { object } = await generateObject({
       model: openai('gpt-4o'),
       schema: ArchitectureSchema,
       system: `
-        ROLE: Tu es un Architecte Technique Senior expert en Next.js 15, Prisma et Supabase.
-        INPUT: Une stratégie produit validée.
-        MISSION: Produire les spécifications techniques exécutables.
+        ROLE: Tu es un Architecte Logiciel expert.
+        MISSION: Produire un schéma Prisma PARFAIT.
         
-        RÈGLES PRISMA:
-        - Utilise toujours des UUID pour les ID (@id @default(uuid())).
-        - Ajoute toujours createdAt/updatedAt.
-        - Ne réinvente pas User (suppose qu'il existe déjà lié à Supabase Auth).
+        CONSIGNE CRITIQUE :
+        Chaque schéma doit OBLIGATOIREMENT inclure le modèle 'User' suivant pour permettre les relations :
         
-        RÈGLES USER STORIES:
-        - Sois technique et précis.
+        model User {
+          id        String   @id @default(uuid())
+          email     String   @unique
+          name      String?
+          createdAt DateTime @default(now())
+          updatedAt DateTime @updatedAt
+          // Ajoute ici les relations vers tes autres modèles (ex: invoices Invoice[])
+        }
+
+        RÈGLES :
+        - Utilise des relations @relation pour lier les données à l'utilisateur.
+        - Utilise @default(uuid()) pour les IDs.
+        - Ne mets PAS de bloc 'datasource' ou 'generator', commence direct aux 'model'.
       `,
-      prompt: `Génère l'architecture pour ce projet : ${JSON.stringify(strategy)}`,
+      prompt: `Génère l'architecture pour : ${JSON.stringify(project.strategy)}`,
     })
 
-    // 2. Sauvegarde du résultat
     await prisma.project.update({
       where: { id: projectId },
       data: {
         schema: object.prisma_schema,
-        prd: JSON.stringify(object.user_stories) // On stocke les stories comme PRD simple
+        prd: JSON.stringify(object.user_stories)
       }
     })
 
     return { success: true, data: object }
-  } catch (error) {
-    console.error("❌ Erreur Architecte:", error)
-    return { success: false, error: "Échec génération architecture" }
+  } catch (error: any) {
+    return { success: false, error: error.message }
   }
 }
