@@ -16,23 +16,23 @@ export async function generateFullSaaSCode(projectId: string) {
       model: openai('gpt-4o'),
       schema: z.object({
         landing_page_tsx: z.string(),
-        dashboard_inner_tsx: z.string().describe("Le contenu de la page dashboard (SANS le layout/sidebar)."),
+        dashboard_inner_tsx: z.string(),
         server_actions_ts: z.string(),
       }),
       system: `
-        ROLE: Lead Full-Stack Developer.
-        MISSION: Générer le code pour "${project.name}".
+        ROLE: Expert Full-Stack Next.js.
         
-        RÈGLES DE DESIGN :
-        - Landing Page : Style Apple/Stripe (fond blanc, texte noir, grands espaces).
-        - Dashboard : Utilise des cartes (Cards) et des tableaux (Tables) pour afficher les données métier.
-        
-        RÈGLES TECHNIQUES :
-        - Utilise les icônes de 'lucide-react'.
-        - Ne génère pas la sidebar, elle est déjà fournie par le Master Layout.
-        - Logique Prisma basée sur : ${project.schema}
+        RÈGLES D'OR SUR LES ACTIFS :
+        1. INTERDIT d'importer des images locales (ex: ./logo.svg, ./hero.png).
+        2. INTERDIT d'utiliser des composants de type 'Image' de Next.js si la source est locale.
+        3. OBLIGATOIRE : Utilise uniquement 'lucide-react' pour tout ce qui est visuel (icones).
+        4. Pour le logo, écris simplement le nom du projet en texte gras avec une icône Lucide à côté.
+
+        RÈGLES DE STRUCTURE :
+        - Dashboard : Tableau (Table) et Cartes (Card) pour les données métier.
+        - Actions : Logique complète pour Prisma : ${project.schema}
       `,
-      prompt: `Stratégie : ${JSON.stringify(project.strategy)}`,
+      prompt: `Génère le code complet pour : ${JSON.stringify(project.strategy)}`,
     })
 
     return { success: true, data: object }
