@@ -11,35 +11,25 @@ export async function generateFullSaaSCode(projectId: string) {
   const project = await prisma.project.findUnique({ where: { id: projectId } })
   if (!project) return { success: false, error: "Projet introuvable" }
 
-  const schema = project.schema // Les modèles générés par l'Architecte
-
   try {
     const { object } = await generateObject({
       model: openai('gpt-4o'),
       schema: z.object({
         landing_page_tsx: z.string(),
-        dashboard_core_tsx: z.string(),
+        dashboard_content_tsx: z.string().describe("Le contenu INTERNE du dashboard (pas le layout)."),
         server_actions_ts: z.string(),
       }),
       system: `
-        ROLE: Expert Senior Full-Stack Next.js 15.
-        MISSION: Générer une application SaaS COMPLÈTE et OPÉRATIONNELLE pour "${project.name}".
+        ROLE: Expert Full-Stack spécialisé en SaaS B2B.
+        MISSION: Générer le CŒUR OPÉRATIONNEL du SaaS "${project.name}".
         
-        RÈGLES D'OR (ZÉRO PLACEHOLDER) :
-        1. LE DASHBOARD DOIT CONTENIR :
-           - Un tableau (Table) qui affiche les données réelles récupérées via une Server Action.
-           - Un bouton "Ajouter [Entité]" qui ouvre un formulaire ou une modale.
-           - Des statistiques en haut de page (Sommes, Compteurs).
-        
-        2. LA LOGIQUE SERVEUR (Actions) :
-           - Tu dois écrire les fonctions 'getData' et 'createData' en utilisant Prisma et le schéma suivant : ${schema}.
-           - Utilise 'revalidatePath' pour mettre à jour l'UI après un ajout.
-        
-        3. DESIGN :
-           - Utilise les composants Shadcn : Table, Card, Button, Input, Dialog/Modal.
-           - Design professionnel, espacé, type "Dashboard Enterprise".
+        RÈGLES :
+        1. Tu travailles à l'intérieur d'un Layout PROFESSIONNEL déjà existant.
+        2. Ne génère que le contenu utile : Un tableau de bord riche, des statistiques (Cards), et un tableau (Table) pour gérer les données.
+        3. DESIGN : Utilise des couleurs sombres (Slate/Zinc), des bordures fines et un espacement généreux.
+        4. ACTIONS : Implémente la logique Prisma pour : ${project.schema}
       `,
-      prompt: `Construis le SaaS complet basé sur cette stratégie : ${JSON.stringify(project.strategy)}`,
+      prompt: `Stratégie : ${JSON.stringify(project.strategy)}`,
     })
 
     return { success: true, data: object }
