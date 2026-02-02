@@ -15,24 +15,21 @@ export async function generateFullSaaSCode(projectId: string) {
     const { object } = await generateObject({
       model: openai('gpt-4o'),
       schema: z.object({
-        landing_page_tsx: z.string(),
-        dashboard_inner_tsx: z.string(),
-        server_actions_ts: z.string(),
+        marketing: z.object({
+          hero_title: z.string(),
+          hero_subtitle: z.string(),
+          features: z.array(z.object({ title: z.string(), desc: z.string(), icon: z.string() })),
+          pricing_plans: z.array(z.object({ name: z.string(), price: z.string(), features: z.array(z.string()) }))
+        }),
+        dashboard_config: z.object({
+          stats: z.array(z.object({ label: z.string(), value: z.string() })),
+          table_columns: z.array(z.string()),
+          primary_action_label: z.string()
+        }),
+        server_logic_raw: z.string().describe("Le code des Server Actions pour gérer le métier.")
       }),
-      system: `
-        ROLE: Expert Full-Stack Next.js.
-        
-        RÈGLES D'OR SUR LES ACTIFS :
-        1. INTERDIT d'importer des images locales (ex: ./logo.svg, ./hero.png).
-        2. INTERDIT d'utiliser des composants de type 'Image' de Next.js si la source est locale.
-        3. OBLIGATOIRE : Utilise uniquement 'lucide-react' pour tout ce qui est visuel (icones).
-        4. Pour le logo, écris simplement le nom du projet en texte gras avec une icône Lucide à côté.
-
-        RÈGLES DE STRUCTURE :
-        - Dashboard : Tableau (Table) et Cartes (Card) pour les données métier.
-        - Actions : Logique complète pour Prisma : ${project.schema}
-      `,
-      prompt: `Génère le code complet pour : ${JSON.stringify(project.strategy)}`,
+      system: `Tu es le moteur de données d'un SaaS. Tu ne génères PAS d'UI. Tu génères le CONTENU et la LOGIQUE.`,
+      prompt: `Projet: ${project.name}. Stratégie: ${JSON.stringify(project.strategy)}`,
     })
 
     return { success: true, data: object }
