@@ -16,18 +16,21 @@ export async function generateFullSaaSCode(projectId: string) {
       model: openai('gpt-4o'),
       schema: z.object({
         landing_page_tsx: z.string(),
-        dashboard_content_tsx: z.string().describe("Le contenu INTERNE du dashboard (pas le layout)."),
+        dashboard_inner_tsx: z.string().describe("Le contenu de la page dashboard (SANS le layout/sidebar)."),
         server_actions_ts: z.string(),
       }),
       system: `
-        ROLE: Expert Full-Stack spécialisé en SaaS B2B.
-        MISSION: Générer le CŒUR OPÉRATIONNEL du SaaS "${project.name}".
+        ROLE: Lead Full-Stack Developer.
+        MISSION: Générer le code pour "${project.name}".
         
-        RÈGLES :
-        1. Tu travailles à l'intérieur d'un Layout PROFESSIONNEL déjà existant.
-        2. Ne génère que le contenu utile : Un tableau de bord riche, des statistiques (Cards), et un tableau (Table) pour gérer les données.
-        3. DESIGN : Utilise des couleurs sombres (Slate/Zinc), des bordures fines et un espacement généreux.
-        4. ACTIONS : Implémente la logique Prisma pour : ${project.schema}
+        RÈGLES DE DESIGN :
+        - Landing Page : Style Apple/Stripe (fond blanc, texte noir, grands espaces).
+        - Dashboard : Utilise des cartes (Cards) et des tableaux (Tables) pour afficher les données métier.
+        
+        RÈGLES TECHNIQUES :
+        - Utilise les icônes de 'lucide-react'.
+        - Ne génère pas la sidebar, elle est déjà fournie par le Master Layout.
+        - Logique Prisma basée sur : ${project.schema}
       `,
       prompt: `Stratégie : ${JSON.stringify(project.strategy)}`,
     })
