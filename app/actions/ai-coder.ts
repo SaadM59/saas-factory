@@ -8,35 +8,29 @@ const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 export async function generateFullSaaSCode(projectId: string) {
   const project = await prisma.project.findUnique({ where: { id: projectId } })
-  if (!project) return { success: false, error: "Projet introuvable" }
+  if (!project) return { success: false, error: "Introuvable" }
 
-  try {
-    const { object } = await generateObject({
-      model: openai('gpt-4o'),
-      schema: z.object({
-        marketing: z.object({
-          hero_title: z.string(),
-          hero_subtitle: z.string(),
-          features: z.array(z.object({ title: z.string(), desc: z.string() })),
+  const { object } = await generateObject({
+    model: openai('gpt-4o'),
+    schema: z.object({
+      marketing: z.any(),
+      dashboard: z.object({
+        smart_widgets: z.array(z.object({ title: z.string(), value: z.string(), trend: z.string() })),
+        main_tool: z.object({
+          title: z.string(),
+          action_label: z.string(),
+          form_fields: z.array(z.object({ name: z.string(), label: z.string(), type: z.string() }))
         }),
-        feature_config: z.object({
-          entity_name: z.string().describe("Nom de l'objet à créer (ex: Facture)"),
-          form_fields: z.array(z.object({
-            name: z.string(),
-            label: z.string(),
-            type: z.enum(["text", "number", "date"])
-          })),
-          table_columns: z.array(z.string())
-        }),
-        business_logic: z.string().describe("Le code des Server Actions (create, delete, list) utilisant Prisma.")
+        ai_insight_placeholder: z.string().describe("Un texte d'analyse IA pour le dashboard")
       }),
-      system: `Tu es l'ingénieur système de "${project.name}". 
-               LOGIQUE : Utilise les modèles Prisma définis : ${project.schema}.
-               Génère les champs de formulaire correspondants aux modèles.`,
-      prompt: `Génère le moteur métier pour : ${JSON.stringify(project.strategy)}`,
-    })
-    return { success: true, data: object }
-  } catch (error: any) {
-    return { success: false, error: error.message }
-  }
+      server_logic: z.string().describe("Code TypeScript exportant des fonctions asynchrones (createRecord, calculateInsights, runAIAnalysis) utilisant Prisma.")
+    }),
+    system: `Tu es un Lead Developer. Tu dois coder le 'MOTEUR' du SaaS. 
+             SCHEMA DB : ${project.schema}
+             MISSION : Écris une logique qui ne se contente pas de sauvegarder. Elle doit transformer les données (ex: calculer un score de santé financière, générer un texte de relance automatique).
+             ZÉRO PLACEHOLDER. Code complet.`,
+    prompt: `Construis la logique métier pour : ${JSON.stringify(project.strategy)}`,
+  })
+
+  return { success: true, data: object }
 }
